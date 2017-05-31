@@ -1,0 +1,104 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Graphics Maker</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+    </head>
+    <body>
+        <div id="main"></div>
+        <link href="style.css" rel="stylesheet">
+        <link href="range.css" rel="stylesheet">
+        <link href="range.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Amatic+SC|Barrio|Inconsolata|Kumar+One|Merriweather|Open+Sans|Roboto|Source+Code+Pro|Ubuntu" rel="stylesheet">
+        <script src="GraphicsMaker.js"></script>
+        <script>
+            var node = document.getElementById('main');
+            var app = Elm.GraphicsMaker.embed(node);
+
+
+            app.ports.saveSVG.subscribe(function() {
+                saveSVG();
+            });
+            app.ports.savePNG.subscribe(function() {
+                savePNG();
+            });
+
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            async function saveSVG() {
+                /* 
+                * sources used for this:
+                * https://stackoverflow.com/q/6427576
+                * https://stackoverflow.com/q/30694453
+                * https://www.w3.org/TR/SVG/struct.html#NewDocument
+                */
+                await sleep(100);
+
+                var a = document.createElement('a');
+                a.style = "display: none";  
+
+                var svg = document.getElementById('svg');
+                var header = `<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "htp://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+`;
+                var svgText = header + svg.outerHTML
+                var blob = new Blob([svgText], { type : "image\/svg+xml" });
+                var objectURL = window.URL.createObjectURL(blob);
+                // window.open(objectURL);
+
+                a.href = objectURL;
+                a.download = "image.svg";
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function(){
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(objectURL);  
+                }, 100);  
+            }
+
+            async function savePNG() {
+                /* sources: https://gist.github.com/gustavohenke/9073132#gistcomment-1607719 */
+
+                await sleep(100);
+
+                var wrapper = document.getElementById("image");
+                var svg = wrapper.querySelector("svg");
+
+                if (typeof window.XMLSerializer != "undefined") {
+                    var svgData = (new XMLSerializer()).serializeToString(svg);
+                } else if (typeof svg.xml != "undefined") {
+                    var svgData = svg.xml;
+                }
+
+                var canvas = document.createElement("canvas");
+                var svgSize = svg.getBoundingClientRect();
+                canvas.width = svgSize.width;
+                canvas.height = svgSize.height;
+                var ctx = canvas.getContext("2d");
+
+                var img = document.createElement("img");
+                img.setAttribute("src", "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData))) );
+
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0);
+                    var imgsrc = canvas.toDataURL("image/png");
+
+                    var a = document.createElement("a");
+                    document.body.appendChild(a);
+                    a.download = "image.png";
+                    a.href = imgsrc;
+                    a.click();
+                };
+            }
+        </script>
+        <script>
+
+        </script>
+        <!--<button type="button" class="btn btn-secondary" id="save-button" onclick="saveSVG()">Save SVG</button> -->
+        
+    </body>
+</html>
